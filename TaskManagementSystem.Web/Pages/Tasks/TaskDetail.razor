@@ -1,0 +1,77 @@
+﻿@page "/tasks/{id:int}"
+@using MudBlazor
+@using TaskManagementSystem.Web.Services
+@inject TaskService TaskService
+@inject ActivityService ActivityService
+@inject NavigationManager NavigationManager
+
+<MudContainer>
+    <MudTextField @bind-Value="task.TaskName" Label="Task Name" />
+    <MudTextField @bind-Value="task.Tags" Label="Tags" />
+    <MudDatePicker @bind-Date="task.DueDate" Label="Due Date" />
+    <MudTextField @bind-Value="task.Status" Label="Status" />
+    <MudButton OnClick="SaveTask">Save</MudButton>
+    <MudButton OnClick="DeleteTask">Delete</MudButton>
+    <MudButton OnClick="MarkCompleted">Mark as Completed</MudButton>
+
+    <MudTable Items="activities">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Activities</MudText>
+            <MudSpacer />
+            <MudButton Color="Color.Primary" OnClick="AddActivity">Add Activity</MudButton>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh>Activity Date</MudTh>
+            <MudTh>Done By</MudTh>
+            <MudTh>Description</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Activity Date">@context.ActivityDate?.ToShortDateString()</MudTd>
+            <MudTd DataLabel="Done By">@context.DoneBy</MudTd>
+            <MudTd DataLabel="Description">@context.ActivityDescription</MudTd>
+        </RowTemplate>
+    </MudTable>
+</MudContainer>
+
+@code {
+    [Parameter] public int id { get; set; }
+    private TaskManagement.Domain.Entities.Task task = new();
+    private IEnumerable<TaskManagement.Domain.Entities.Activity> activities;
+
+    protected override async Task OnInitializedAsync()
+    {
+        task = await TaskService.GetTaskByIdAsync(id);
+        activities = await ActivityService.GetActivitiesByTaskIdAsync(id);
+    }
+
+    private async Task SaveTask()
+    {
+        await TaskService.UpdateTaskAsync(task);
+        NavigationManager.NavigateTo("/tasks");
+    }
+
+    private async Task DeleteTask()
+    {
+        await TaskService.DeleteTaskAsync(task.Id);
+        NavigationManager.NavigateTo("/tasks");
+    }
+
+    private async Task MarkCompleted()
+    {
+        task.Status = 2;
+        await TaskService.UpdateTaskAsync(task);
+    }
+
+    private async Task AddActivity()
+    {
+        var activity = new TaskManagement.Domain.Entities.Activity
+        {
+            TaskId = task.Id,
+            ActivityDate = DateTime.Now,
+            DoneBy = "User",
+            ActivityDescription = "New Activity"
+        };
+        await ActivityService.AddActivityAsync(activity);
+        activities = await ActivityService.GetActivitiesByTaskIdAsync(task.Id);
+    }
+}

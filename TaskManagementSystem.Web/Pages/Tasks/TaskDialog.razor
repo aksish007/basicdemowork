@@ -1,0 +1,91 @@
+﻿@inject ISnackbar Snackbar
+@using TaskManagement.Domain.Entities
+@using TaskManagementSystem.Web.Services
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter] public List<TaskManagement.Domain.Entities.Task> Tasks { get; set; } = new List<TaskManagement.Domain.Entities.Task>();
+    [Parameter] public EventCallback<List<TaskManagement.Domain.Entities.Task>> OnTasksSaved { get; set; }
+    [Parameter] public bool IsEdit { get; set; } = false;
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async System.Threading.Tasks.Task Save()
+    {
+        await OnTasksSaved.InvokeAsync(Tasks);
+        MudDialog.Close(DialogResult.Ok(true));
+        Snackbar.Add("Tasks Saved.", Severity.Success);
+    }
+
+    private void AddTask()
+    {
+        Tasks.Add(new TaskManagement.Domain.Entities.Task());
+    }
+
+    private void RemoveTask(TaskManagement.Domain.Entities.Task task)
+    {
+        Tasks.Remove(task);
+    }
+
+    private void AddActivity(TaskManagement.Domain.Entities.Task task)
+    {
+        task.Activities.Add(new Activity { ActivityDate = DateTime.Now, DoneBy = "User", ActivityDescription = "New Activity" });
+    }
+
+    private void RemoveActivity(TaskManagement.Domain.Entities.Task task, Activity activity)
+    {
+        task.Activities.Remove(activity);
+    }
+}
+
+<MudPaper Class="pa-6">
+    <MudDialogContent>
+        @foreach (var task in Tasks)
+        {
+            <MudCard Class="mb-4">
+                <MudCardContent>
+                    <MudTextField @bind-Value="task.TaskName" Label="Task Name" Variant="Variant.Text" Margin="Margin.Normal"></MudTextField>
+                    <MudTextField @bind-Value="task.TagsString" Label="Tags (comma-separated)" Variant="Variant.Text" Margin="Margin.Normal"></MudTextField>
+                    <MudDatePicker @bind-Date="task.DueDate" Label="Due Date" Variant="Variant.Text" Margin="Margin.Normal"></MudDatePicker>
+                    <MudTextField @bind-Value="task.Color" Label="Color" Variant="Variant.Text" Margin="Margin.Normal"></MudTextField>
+                    <MudTextField @bind-Value="task.AssignedTo" Label="Assigned To" Variant="Variant.Text" Margin="Margin.Normal"></MudTextField>
+                    <MudSelect T="string" Label="Status" @bind-Value="task.StatusString" Variant="Variant.Text" Margin="Margin.Normal">
+                        @foreach (var status in new List<string>{"New","Pending","Completed"})
+                        {
+                            <MudSelectItem T="string" Value="status">@status</MudSelectItem>
+                        }
+                    </MudSelect>
+                    @if (!IsEdit)
+                    {
+                        <MudButton Color="Color.Error" OnClick="@(() => RemoveTask(task))">Remove Task</MudButton>
+                    }
+                    <MudDivider Class="my-2" />
+
+                    <MudText Typo="Typo.h6">Activities</MudText>
+                    @foreach (var activity in task.Activities)
+                    {
+                        <MudCard Class="mb-2">
+                            <MudCardContent>
+                                <MudDatePicker @bind-Date="activity.ActivityDate" Label="Activity Date" Variant="Variant.Text" Margin="Margin.Normal"></MudDatePicker>
+                                <MudTextField @bind-Value="activity.DoneBy" Label="Done By" Variant="Variant.Text" Margin="Margin.Normal"></MudTextField>
+                                <MudTextField @bind-Value="activity.ActivityDescription" Label="Activity Description" Variant="Variant.Text" Margin="Margin.Normal"></MudTextField>
+                                <MudButton Color="Color.Error" OnClick="@(() => RemoveActivity(task, activity))">Remove Activity</MudButton>
+                            </MudCardContent>
+                        </MudCard>
+                    }
+                    <MudButton Color="Color.Primary" OnClick="@(() => AddActivity(task))">Add Activity</MudButton>
+                </MudCardContent>
+            </MudCard>
+        }
+        @if (!IsEdit)
+        {
+            <MudButton Color="Color.Primary" OnClick="AddTask">Add Another Task</MudButton>
+        }
+    </MudDialogContent>
+    <MudDialogActions>
+        <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Primary">Save</MudButton>
+        <MudButton Variant="Variant.Filled" OnClick="Cancel" Color="Color.Secondary">Cancel</MudButton>
+    </MudDialogActions>
+</MudPaper>

@@ -6,3 +6,8 @@
 /.vs
 /TaskManagement.Adapters/bin/Debug/net8.0
 /TaskManagement.Adapters/obj
+
+**/obj
+**/bin
+**/*/obj
+**/*/bin
